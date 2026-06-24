@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project 2 — Wine Classifier · Anna · DecodeLabs</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg0: #1c0f16;
+      --bg1: #2a111c;
+      --bg2: #451826;
+      --card: rgba(255, 244, 239, 0.08);
+      --card-strong: rgba(255, 244, 239, 0.12);
+      --border: rgba(255, 226, 218, 0.10);
+      --border-strong: rgba(255, 226, 218, 0.18);
+
+      --accent: #d96b7d;
+      --accent2: #8e2740;
+      --accent3: #f0b3bd;
+      --gold: #d7b46a;
+
+      --text: #fff7f5;
+      --muted: #d3b9bf;
+      --faint: rgba(255, 255, 255, 0.08);
+
+      --class1: #f2b16f;
+      --class2: #f08aa3;
+      --class3: #9de0c6;
+
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+      --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+      --font: 'Space Grotesk', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(241, 176, 111, 0.16), transparent 22%),
+        radial-gradient(circle at 85% 15%, rgba(217, 107, 125, 0.16), transparent 18%),
+        radial-gradient(circle at 50% 100%, rgba(141, 39, 64, 0.22), transparent 32%),
+        linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 42%, var(--bg2) 100%);
+      position: relative;
+    }
+
+    /* animated wine glow */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(217, 107, 125, 0.12), transparent 24%),
+        radial-gradient(circle at 70% 30%, rgba(215, 180, 106, 0.08), transparent 20%),
+        radial-gradient(circle at 50% 80%, rgba(240, 179, 189, 0.08), transparent 22%);
+      filter: blur(28px);
+      animation: driftGlow 18s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes driftGlow {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.75;
+      }
+
+      50% {
+        transform: translate3d(2%, -1%, 0) scale(1.03);
+        opacity: 0.9;
+      }
+
+      100% {
+        transform: translate3d(-2%, 2%, 0) scale(1.06);
+        opacity: 0.8;
+      }
+    }
+
+    /* floating particles */
+    .particles {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      bottom: -12vh;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 220, 225, 0.18);
+      box-shadow: 0 0 18px rgba(240, 179, 189, 0.18);
+      animation: floatUp linear infinite;
+    }
+
+    .particle:nth-child(3n) {
+      background: rgba(215, 180, 106, 0.14);
+    }
+
+    .particle:nth-child(4n) {
+      background: rgba(157, 224, 198, 0.12);
+    }
+
+    @keyframes floatUp {
+      from {
+        transform: translateY(0) translateX(0) scale(0.8);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      to {
+        transform: translateY(-120vh) translateX(var(--dx)) scale(1.2);
+        opacity: 0;
+      }
+    }
+
+    header,
+    .page {
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      background: rgba(40, 13, 22, 0.68);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-badge {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      padding: 3px 9px;
+      border-radius: 6px;
+      box-shadow: 0 0 22px rgba(217, 107, 125, 0.18);
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .header-sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .header-right {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    .pipeline,
+    .card {
+      background: linear-gradient(180deg, rgba(255, 247, 244, 0.09), rgba(255, 247, 244, 0.05));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .pipeline {
+      display: flex;
+      align-items: center;
+      margin-bottom: 40px;
+      overflow: hidden;
+      animation: fadeInUp 0.6s ease both;
+    }
+
+    .pipe-step {
+      flex: 1;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-right: 1px solid var(--border);
+    }
+
+    .pipe-step:last-child {
+      border-right: none;
+    }
+
+    .pipe-step.active {
+      background: rgba(217, 107, 125, 0.10);
+    }
+
+    .pipe-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      color: var(--accent3);
+    }
+
+    .pipe-step.active .pipe-icon {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+    }
+
+    .pipe-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .pipe-name {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 760px) {
+
+      .grid,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      overflow: hidden;
+      animation: fadeInUp 0.7s ease both;
+    }
+
+    .card:nth-child(2) {
+      animation-delay: 0.06s;
+    }
+
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .card-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .card-title span {
+      color: var(--accent3);
+      margin-right: 6px;
+    }
+
+    .card-body {
+      padding: 18px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .stat-val {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--accent3);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .species-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .chip {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .chip.class1 {
+      color: var(--class1);
+      border-color: rgba(242, 177, 111, 0.30);
+    }
+
+    .chip.class2 {
+      color: var(--class2);
+      border-color: rgba(240, 138, 163, 0.30);
+    }
+
+    .chip.class3 {
+      color: var(--class3);
+      border-color: rgba(157, 224, 198, 0.30);
+    }
+
+    #scatter-canvas,
+    #neighbor-canvas {
+      width: 100%;
+      display: block;
+      border-radius: 10px;
+    }
+
+    #scatter-canvas {
+      height: 260px;
+      cursor: crosshair;
+    }
+
+    #neighbor-canvas {
+      height: 180px;
+      margin-top: 12px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .k-row,
+    .vote-row,
+    .per-class-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .k-label,
+    .vote-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      width: 70px;
+      flex-shrink: 0;
+    }
+
+    .k-bar-track,
+    .vote-track,
+    .per-class-bar-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .k-bar-fill,
+    .vote-fill,
+    .per-class-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .k-acc,
+    .vote-pct,
+    .per-class-val {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      width: 44px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .k-best-badge {
+      font-family: var(--mono);
+      font-size: 9px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .cm-wrap {
+      overflow-x: auto;
+    }
+
+    .cm-table {
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .cm-table th {
+      padding: 8px 12px;
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 10px;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .cm-table td {
+      padding: 10px 14px;
+      text-align: center;
+      border: 1px solid var(--border);
+      min-width: 60px;
+    }
+
+    .cm-table td.diagonal {
+      background: rgba(217, 107, 125, 0.16);
+      color: var(--accent3);
+      font-weight: 700;
+    }
+
+    .cm-table td.off-diag {
+      color: var(--class2);
+    }
+
+    .cm-table td.zero {
+      color: var(--muted);
+    }
+
+    .cm-axis-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metric-name,
+    .field-label,
+    .section-title {
+      font-family: var(--mono);
+      color: var(--muted);
+    }
+
+    .metric-name {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .metric-val {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--accent3);
+    }
+
+    .metric-sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .field-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .field-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .field-input:focus {
+      border-color: rgba(240, 179, 189, 0.5);
+      box-shadow: 0 0 0 4px rgba(217, 107, 125, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .field-hint {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #caaeb6;
+      margin-top: 4px;
+    }
+
+    .classify-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 11px;
+      cursor: pointer;
+      transition: transform 0.12s, filter 0.15s, box-shadow 0.15s;
+      margin-bottom: 18px;
+      box-shadow: 0 12px 26px rgba(142, 39, 64, 0.35);
+    }
+
+    .classify-btn:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    .classify-btn:active {
+      transform: scale(0.98);
+    }
+
+    .result-box {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: none;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .result-box.visible {
+      display: block;
+      animation: popIn 0.28s ease both;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.98) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .result-species {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .result-sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .neighbor-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .preset-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 11px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .preset-btn:hover {
+      border-color: rgba(240, 179, 189, 0.35);
+      color: var(--text);
+      box-shadow: 0 0 0 1px rgba(217, 107, 125, 0.12);
+    }
+
+    .preset-btn:active {
+      transform: scale(0.98);
+    }
+
+    .section-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title span {
+      color: var(--accent3);
+    }
+
+    /* small responsive tweaks */
+    @media (max-width: 920px) {
+      header {
+        padding: 16px 18px;
+      }
+
+      .page {
+        padding: 22px 14px 48px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="particles" id="particles"></div>
+
+  <header>
+    <div>
+      <div class="header-title">Wine Classification</div>
+      <div class="header-sub">K-Nearest Neighbors · Wine Dataset</div>
+    </div>
+    <div class="header-right">
+      Anna<br>Project 2
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="pipeline">
+      <div class="pipe-step active">
+        <div class="pipe-icon">📥</div>
+        <div>
+          <div class="pipe-label">Step 1</div>
+          <div class="pipe-name">Input</div>
+        </div>
+      </div>
+      <div class="pipe-step active">
+        <div class="pipe-icon">⚙️</div>
+        <div>
+          <div class="pipe-label">Step 2</div>
+          <div class="pipe-name">Process</div>
+        </div>
+      </div>
+      <div class="pipe-step active">
+        <div class="pipe-icon">📊</div>
+        <div>
+          <div class="pipe-label">Step 3</div>
+          <div class="pipe-name">Output</div>
+        </div>
+      </div>
+      <div class="pipe-step active">
+        <div class="pipe-icon">🔮</div>
+        <div>
+          <div class="pipe-label">Bonus</div>
+          <div class="pipe-name">Classify</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span>01</span>The Wine Dataset</div>
+        </div>
+        <div class="card-body">
+          <div class="stat-row">
+            <div class="stat">
+              <div class="stat-val">178</div>
+              <div class="stat-label">Samples</div>
+            </div>
+            <div class="stat">
+              <div class="stat-val">13</div>
+              <div class="stat-label">Features</div>
+            </div>
+            <div class="stat">
+              <div class="stat-val">3</div>
+              <div class="stat-label">Classes</div>
+            </div>
+            <div class="stat">
+              <div class="stat-val">80/20</div>
+              <div class="stat-label">Split</div>
+            </div>
+          </div>
+          <div class="species-chips" style="margin-top:18px">
+            <span class="chip class1">● class 1</span>
+            <span class="chip class2">● class 2</span>
+            <span class="chip class3">● class 3</span>
+          </div>
+          <div style="margin-top:18px">
+            <div class="field-label">13 Chemical Features</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Alcohol</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Malic Acid</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Ash</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Alcalinity of Ash</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Magnesium</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Total Phenols</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Flavanoids</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Nonflavanoid Phenols</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Proanthocyanins</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Color Intensity</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Hue</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ OD280/OD315</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">→ Proline</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span>02</span>Feature Space (Alcohol × Proline)</div>
+        </div>
+        <div class="card-body" style="padding-bottom:12px">
+          <canvas id="scatter-canvas"></canvas>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--class1)"></div>Class 1
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--class2)"></div>Class 2
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--class3)"></div>Class 3
+            </div>
+            <div class="legend-item" style="margin-left:auto;font-size:10px">x=Alcohol · y=Proline</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span>03</span>Tuning K</div>
+        </div>
+        <div class="card-body" id="k-tuning-body">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:12px">Testing k = 1–15 on
+            the test set</div>
+          <div id="k-rows"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span>04</span>Confusion Matrix</div>
+        </div>
+        <div class="card-body">
+          <div class="cm-axis-label">Predicted →</div>
+          <div class="cm-wrap">
+            <table class="cm-table" id="cm-table"></table>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:12px;line-height:1.6">
+            Indigo diagonal = correct predictions.<br>
+            Red off-diagonal = misclassifications.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span>05</span>Model Metrics</div>
+        </div>
+        <div class="card-body">
+          <div class="metric-grid" id="metric-grid"></div>
+          <div style="margin-top:18px">
+            <div class="field-label" style="margin-bottom:10px">F1 Score per class</div>
+            <div id="per-class-bars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span>06</span>Try It Yourself — Classify a Wine Sample</div>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+          <div>
+            <div class="section-title"><span>//</span> Enter measurements</div>
+            <div class="field-label" style="margin-bottom:8px">Quick presets</div>
+            <div class="preset-row">
+              <button class="preset-btn" onclick="loadPreset('class1')">🍷 Class 1</button>
+              <button class="preset-btn" onclick="loadPreset('class2')">🍇 Class 2</button>
+              <button class="preset-btn" onclick="loadPreset('class3')">🥂 Class 3</button>
+            </div>
+            <div class="input-grid" id="input-grid"></div>
+            <button class="classify-btn" id="classifyBtn">🔍 Classify Wine</button>
+            <div class="result-box" id="result-box">
+              <div class="result-species" id="result-species"></div>
+              <div class="result-sub" id="result-sub"></div>
+              <div class="field-label" style="margin-bottom:8px">Neighbor votes</div>
+              <div id="vote-bars"></div>
+            </div>
+          </div>
+          <div>
+            <div class="section-title"><span>//</span> KNN visualisation</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:10px">
+              Your point (✦) appears on the scatter plot. Lines connect to its k nearest neighbors.
+            </div>
+            <canvas id="neighbor-canvas"></canvas>
+            <div class="neighbor-label" id="neighbor-label">Enter values and click Classify to visualise</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WINE_DATA = [
+      [14.23, 1.71, 2.43, 15.6, 127, 2.80, 3.06, 0.28, 2.29, 5.64, 1.04, 3.92, 1065, 0], [13.20, 1.78, 2.14, 11.2, 100, 2.65, 2.76, 0.26, 1.28, 4.38, 1.05, 3.40, 1050, 0], [13.16, 2.36, 2.67, 18.6, 101, 2.80, 3.24, 0.30, 2.81, 5.68, 1.03, 3.17, 1185, 0], [14.37, 1.95, 2.50, 16.8, 113, 3.85, 3.49, 0.24, 2.18, 7.80, 0.86, 3.45, 1480, 0], [13.24, 2.59, 2.87, 21.0, 118, 2.80, 2.69, 0.39, 1.82, 4.32, 1.04, 2.93, 735, 0], [14.20, 1.76, 2.45, 15.2, 112, 3.27, 3.39, 0.34, 1.97, 6.75, 1.05, 2.85, 1450, 0], [14.39, 1.87, 2.45, 14.6, 96, 2.50, 2.52, 0.30, 1.98, 5.25, 1.02, 3.58, 1290, 0], [14.06, 2.15, 2.61, 17.6, 121, 2.60, 2.51, 0.31, 1.25, 5.05, 1.06, 3.58, 1295, 0], [14.83, 1.64, 2.17, 14.0, 97, 2.80, 2.98, 0.29, 1.98, 5.20, 1.08, 2.85, 1045, 0], [13.86, 1.35, 2.27, 16.0, 98, 2.98, 3.15, 0.22, 1.85, 7.22, 1.01, 3.55, 1045, 0],
+      [12.37, 1.17, 1.92, 19.6, 78, 2.11, 2.00, 0.27, 1.04, 4.68, 1.12, 3.48, 510, 1], [12.33, 1.10, 2.28, 16.0, 101, 2.05, 1.09, 0.63, 0.41, 3.27, 1.25, 1.67, 680, 1], [12.64, 1.36, 2.02, 16.8, 100, 2.02, 1.41, 0.53, 0.62, 5.75, 0.98, 1.59, 450, 1], [13.67, 1.25, 1.92, 18.0, 94, 2.10, 1.79, 0.32, 0.73, 3.80, 1.23, 2.46, 630, 1], [12.37, 1.13, 2.16, 19.0, 87, 3.50, 3.10, 0.19, 1.87, 4.45, 1.22, 2.87, 420, 1], [12.33, 1.10, 1.93, 16.0, 101, 1.93, 1.82, 0.14, 1.63, 3.38, 1.25, 1.99, 680, 1], [13.61, 1.36, 2.54, 16.8, 112, 3.20, 2.65, 0.37, 1.77, 5.70, 1.02, 3.07, 840, 1], [12.89, 2.59, 2.48, 20.0, 103, 1.85, 1.76, 0.24, 1.53, 4.90, 1.03, 2.80, 870, 1], [12.96, 2.16, 2.35, 18.5, 94, 1.41, 1.85, 0.25, 1.39, 4.30, 1.25, 1.91, 650, 1], [13.71, 1.86, 2.36, 16.6, 101, 2.61, 2.88, 0.27, 1.69, 5.60, 0.96, 3.31, 985, 1],
+      [12.79, 2.67, 2.48, 22.0, 112, 1.48, 1.36, 0.24, 1.26, 10.80, 0.48, 1.47, 480, 2], [13.73, 4.10, 2.74, 24.5, 96, 1.97, 2.21, 0.42, 1.59, 6.62, 0.78, 1.67, 740, 2], [13.83, 1.65, 2.60, 17.2, 94, 2.98, 2.98, 0.20, 1.89, 5.04, 0.88, 3.07, 1185, 2], [13.58, 2.51, 2.88, 20.0, 112, 3.00, 3.38, 0.34, 1.54, 8.90, 1.05, 3.11, 1105, 2], [13.42, 1.61, 2.48, 17.0, 108, 3.04, 3.27, 0.34, 2.38, 8.00, 0.89, 2.77, 1035, 2], [13.17, 2.59, 2.37, 20.0, 120, 1.65, 0.68, 0.53, 1.46, 9.30, 0.60, 1.62, 840, 2], [14.13, 4.10, 2.74, 24.5, 96, 2.05, 0.76, 0.56, 1.35, 9.20, 0.61, 1.60, 560, 2], [13.50, 1.81, 2.61, 20.0, 96, 2.53, 2.61, 0.28, 1.66, 3.52, 1.12, 3.82, 845, 2], [13.05, 3.86, 2.32, 22.5, 85, 1.65, 1.59, 0.61, 1.62, 4.80, 0.84, 2.01, 515, 2], [13.39, 1.77, 2.62, 16.1, 93, 2.85, 2.94, 0.34, 1.45, 4.80, 0.92, 3.22, 1195, 2],
+    ];
+
+    const CLASS_NAMES = ['class 1', 'class 2', 'class 3'];
+    const CLASS_COLORS = ['#f2b16f', '#f08aa3', '#9de0c6'];
+    const FEATURE_NAMES = ['alcohol', 'malic acid', 'ash', 'alcalinity', 'magnesium', 'phenols', 'flavanoids', 'nonflavanoid', 'proanthocyanins', 'color intensity', 'hue', 'od280/od315', 'proline'];
+    const AXIS_X = 0, AXIS_Y = 12;
+
+    function splitData() {
+      const shuffled = [...WINE_DATA];
+      let seed = 42;
+      function seededRand() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; }
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(seededRand() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      const splitIdx = Math.floor(shuffled.length * 0.8);
+      return { train: shuffled.slice(0, splitIdx), test: shuffled.slice(splitIdx) };
+    }
+
+    function fitScaler(train) {
+      const n = train[0].length - 1;
+      const means = Array(n).fill(0), stds = Array(n).fill(0);
+      train.forEach(row => { for (let i = 0; i < n; i++) means[i] += row[i]; });
+      means.forEach((_, i) => means[i] /= train.length);
+      train.forEach(row => { for (let i = 0; i < n; i++) stds[i] += (row[i] - means[i]) ** 2; });
+      stds.forEach((_, i) => stds[i] = Math.sqrt(stds[i] / train.length) || 1);
+      return { means, stds };
+    }
+
+    function scale(row, sc) {
+      return row.slice(0, 13).map((v, i) => (v - sc.means[i]) / sc.stds[i]);
+    }
+
+    function dist(a, b) {
+      return Math.sqrt(a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0));
+    }
+
+    function knnPredict(point, trainData, scaler, k) {
+      const scaledPoint = scale(point, scaler);
+      const distances = trainData.map(row => ({
+        dist: dist(scaledPoint, scale(row, scaler)),
+        label: row[13],
+        raw: row
+      }));
+      distances.sort((a, b) => a.dist - b.dist);
+      const neighbors = distances.slice(0, k);
+      const votes = [0, 0, 0];
+      neighbors.forEach(n => votes[n.label]++);
+      return { prediction: votes.indexOf(Math.max(...votes)), votes, neighbors };
+    }
+
+    function accuracy(test, train, scaler, k) {
+      let correct = 0;
+      test.forEach(row => {
+        if (knnPredict(row.slice(0, 13), train, scaler, k).prediction === row[13]) correct++;
+      });
+      return correct / test.length;
+    }
+
+    function f1Score(test, train, scaler, k) {
+      const cm = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+      test.forEach(row => {
+        const p = knnPredict(row.slice(0, 13), train, scaler, k).prediction;
+        cm[row[13]][p]++;
+      });
+      let f1sum = 0;
+      for (let c = 0; c < 3; c++) {
+        const tp = cm[c][c];
+        const fp = cm.reduce((s, r) => s + r[c], 0) - tp;
+        const fn = cm[c].reduce((s, v) => s + v, 0) - tp;
+        const prec = tp + fp > 0 ? tp / (tp + fp) : 0;
+        const rec = tp + fn > 0 ? tp / (tp + fn) : 0;
+        f1sum += prec + rec > 0 ? 2 * prec * rec / (prec + rec) : 0;
+      }
+      return { f1: f1sum / 3, cm };
+    }
+
+    function perClassF1(cm) {
+      return cm.map((row, c) => {
+        const tp = cm[c][c];
+        const fp = cm.reduce((s, r) => s + r[c], 0) - tp;
+        const fn = row.reduce((s, v) => s + v, 0) - tp;
+        const p = tp + fp > 0 ? tp / (tp + fp) : 0;
+        const r = tp + fn > 0 ? tp / (tp + fn) : 0;
+        return p + r > 0 ? 2 * p * r / (p + r) : 0;
+      });
+    }
+
+    const { train, test } = splitData();
+    const scaler = fitScaler(train);
+
+    let bestK = 1, bestAcc = 0, kAccs = [];
+    for (let k = 1; k <= 15; k++) {
+      const acc = accuracy(test, train, scaler, k);
+      kAccs.push(acc);
+      if (acc > bestAcc) { bestAcc = acc; bestK = k; }
+    }
+
+    const { f1, cm } = f1Score(test, train, scaler, bestK);
+    const pcf1 = perClassF1(cm);
+
+    function renderKTuning() {
+      const container = document.getElementById('k-rows');
+      container.innerHTML = '';
+      const maxAcc = Math.max(...kAccs);
+      kAccs.forEach((acc, i) => {
+        const k = i + 1, isBest = k === bestK, pct = (acc / maxAcc * 100).toFixed(1);
+        container.innerHTML += `<div class="k-row"><div class="k-label">k=${k}</div><div class="k-bar-track"><div class="k-bar-fill" style="width:${pct}%;${isBest ? '' : 'background:rgba(255,255,255,0.08);'}"></div></div><div class="k-acc">${(acc * 100).toFixed(0)}%</div>${isBest ? '<div class="k-best-badge">best</div>' : ''}</div>`;
+      });
+    }
+
+    function renderCM() {
+      const table = document.getElementById('cm-table');
+      let html = '<thead><tr><th style="text-align:left;color:var(--muted);font-size:10px">Actual ↓</th>';
+      CLASS_NAMES.forEach(n => { html += `<th>${n}</th>`; });
+      html += '</tr></thead><tbody>';
+      cm.forEach((row, i) => {
+        html += `<tr><td style="text-align:left;color:var(--muted);font-size:10px;border:none">${CLASS_NAMES[i]}</td>`;
+        row.forEach((val, j) => {
+          const cls = i === j ? 'diagonal' : val > 0 ? 'off-diag' : 'zero';
+          html += `<td class="${cls}">${val}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody>';
+      table.innerHTML = html;
+    }
+
+    function renderMetrics() {
+      const acc = accuracy(test, train, scaler, bestK);
+      document.getElementById('metric-grid').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-name">Accuracy</div>
+      <div class="metric-val">${(acc * 100).toFixed(1)}%</div>
+      <div class="metric-sub">on ${test.length} test samples</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name">F1 Score</div>
+      <div class="metric-val">${f1.toFixed(3)}</div>
+      <div class="metric-sub">macro average · k=${bestK}</div>
+    </div>`;
+      const bars = document.getElementById('per-class-bars');
+      bars.innerHTML = '';
+      CLASS_NAMES.forEach((name, i) => {
+        bars.innerHTML += `
+      <div class="per-class-row">
+        <div class="per-class-name" style="color:${CLASS_COLORS[i]}">${name}</div>
+        <div class="per-class-bar-track">
+          <div class="per-class-bar" style="width:${(pcf1[i] * 100).toFixed(1)}%;background:${CLASS_COLORS[i]}"></div>
+        </div>
+        <div class="per-class-val">${(pcf1[i] * 100).toFixed(0)}%</div>
+      </div>`;
+      });
+    }
+
+    let userPoint = null;
+    let highlightNeighbors = [];
+
+    function renderScatter(canvas, data, userPt, neighbors) {
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.clientWidth, H = canvas.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, W, H);
+
+      const pad = { l: 42, r: 16, t: 12, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const xVals = data.map(r => r[AXIS_X]), yVals = data.map(r => r[AXIS_Y]);
+      const xMin = Math.min(...xVals) - 0.5, xMax = Math.max(...xVals) + 0.5;
+      const yMin = Math.min(...yVals) - 25, yMax = Math.max(...yVals) + 25;
+
+      const toX = v => pad.l + (v - xMin) / (xMax - xMin) * pw;
+      const toY = v => pad.t + ph - (v - yMin) / (yMax - yMin) * ph;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= 5; i++) {
+        const x = pad.l + pw * i / 5;
+        const y = pad.t + ph * i / 5;
+        ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke();
+      }
+
+      if (userPt && neighbors.length) {
+        const ux = toX(userPt[AXIS_X]), uy = toY(userPt[AXIS_Y]);
+        neighbors.forEach(n => {
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(240,138,163,0.35)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 3]);
+          ctx.moveTo(ux, uy);
+          ctx.lineTo(toX(n.raw[AXIS_X]), toY(n.raw[AXIS_Y]));
+          ctx.stroke();
+          ctx.setLineDash([]);
+        });
+      }
+
+      const neighborRaws = neighbors.map(n => n.raw);
+      data.forEach(row => {
+        const x = toX(row[AXIS_X]), y = toY(row[AXIS_Y]);
+        const isNeighbor = neighborRaws.includes(row);
+        ctx.beginPath();
+        ctx.arc(x, y, isNeighbor ? 5 : 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = CLASS_COLORS[row[13]];
+        ctx.globalAlpha = isNeighbor ? 1 : 0.72;
+        ctx.fill();
+        if (isNeighbor) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      });
+
+      if (userPt) {
+        const ux = toX(userPt[AXIS_X]), uy = toY(userPt[AXIS_Y]);
+        ctx.beginPath();
+        ctx.arc(ux, uy, 7, 0, Math.PI * 2);
+        ctx.fillStyle = '#f0b3bd';
+        ctx.shadowColor = 'rgba(240,179,189,0.4)';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#2a111c';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✦', ux, uy);
+      }
+
+      ctx.fillStyle = '#d3b9bf';
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Alcohol', pad.l + pw / 2, H - 4);
+
+      ctx.save();
+      ctx.translate(10, pad.t + ph / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Proline', 0, 0);
+      ctx.restore();
+    }
+
+    function renderNeighborCanvas(userPt, neighbors) {
+      const canvas = document.getElementById('neighbor-canvas');
+      if (!userPt) return;
+      renderScatter(canvas, WINE_DATA, userPt, neighbors);
+    }
+
+    function classify() {
+      const values = FEATURE_NAMES.map((_, i) => parseFloat(document.getElementById(`f${i}`).value));
+      if (values.some(isNaN)) {
+        alert('Please fill in all 13 measurements.');
+        return;
+      }
+
+      const { prediction, votes, neighbors } = knnPredict(values, train, scaler, bestK);
+      const total = votes.reduce((a, b) => a + b, 0);
+      const color = CLASS_COLORS[prediction];
+
+      const box = document.getElementById('result-box');
+      box.classList.add('visible');
+      document.getElementById('result-species').innerHTML =
+        `<span style="color:${color}">● ${CLASS_NAMES[prediction].toUpperCase()}</span>`;
+      document.getElementById('result-sub').textContent =
+        `Based on ${bestK} nearest neighbors · majority vote`;
+
+      const voteDiv = document.getElementById('vote-bars');
+      voteDiv.innerHTML = '';
+      votes.forEach((v, i) => {
+        const pct = (v / total * 100).toFixed(0);
+        voteDiv.innerHTML += `
+      <div class="vote-row">
+        <div class="vote-label" style="color:${CLASS_COLORS[i]}">${CLASS_NAMES[i]}</div>
+        <div class="vote-track">
+          <div class="vote-fill" style="width:${pct}%;background:${CLASS_COLORS[i]}"></div>
+        </div>
+        <div class="vote-pct">${v}/${total}</div>
+      </div>`;
+      });
+
+      userPoint = values;
+      highlightNeighbors = neighbors;
+      const scatter = document.getElementById('scatter-canvas');
+      renderScatter(scatter, WINE_DATA, userPoint, highlightNeighbors);
+      renderNeighborCanvas(userPoint, highlightNeighbors);
+      document.getElementById('neighbor-label').textContent =
+        `✦ = your wine sample · highlighted = ${bestK} nearest neighbors`;
+    }
+
+    const PRESETS = {
+      class1: [13.8, 1.8, 2.4, 16.0, 100, 2.8, 3.0, 0.28, 2.2, 5.5, 1.0, 3.5, 1100],
+      class2: [12.3, 1.2, 2.1, 18.0, 95, 2.0, 1.5, 0.35, 1.5, 4.5, 1.0, 2.0, 650],
+      class3: [12.9, 3.0, 2.3, 20.0, 105, 1.8, 1.7, 0.25, 1.4, 7.5, 0.8, 1.8, 500],
+    };
+
+    function buildInputs() {
+      const grid = document.getElementById('input-grid');
+      grid.innerHTML = '';
+      FEATURE_NAMES.forEach((name, i) => {
+        grid.innerHTML += `<div><div class="field-label">${name}</div><input class="field-input" id="f${i}" type="number" step="any" placeholder="e.g. ${PRESETS.class1[i]}"/></div>`;
+      });
+    }
+
+    function loadPreset(name) {
+      const vals = PRESETS[name];
+      vals.forEach((v, i) => document.getElementById(`f${i}`).value = v);
+      classify();
+    }
+
+    function createParticles() {
+      const wrap = document.getElementById('particles');
+      const count = 18;
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('span');
+        el.className = 'particle';
+        const left = Math.random() * 100;
+        const size = 4 + Math.random() * 7;
+        const duration = 12 + Math.random() * 12;
+        const delay = Math.random() * 12;
+        const dx = `${(Math.random() * 120 - 60).toFixed(0)}px`;
+        el.style.left = `${left}%`;
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        el.style.setProperty('--dx', dx);
+        el.style.animationDuration = `${duration}s`;
+        el.style.animationDelay = `${delay}s`;
+        wrap.appendChild(el);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      createParticles();
+      buildInputs();
+      renderKTuning();
+      renderCM();
+      renderMetrics();
+
+      const scatter = document.getElementById('scatter-canvas');
+      renderScatter(scatter, WINE_DATA, null, []);
+
+      document.getElementById('classifyBtn').addEventListener('click', classify);
+
+      window.addEventListener('resize', () => {
+        renderScatter(scatter, WINE_DATA, userPoint, highlightNeighbors);
+        if (userPoint) renderNeighborCanvas(userPoint, highlightNeighbors);
+      });
+    });
+  </script>
+</body>
+
+</html>
